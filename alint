@@ -188,7 +188,7 @@ for apkbuild; do
 	scan '\|\| return 1' "|| return 1 is not required as set -e is used"
 	scan '^pkgname="[^$]+"' "pkgname must not be quoted"
 	scan '^pkgver="[^$]+"' "pkgver must not be quoted"
-	scan '^[^=]*=(|""|''|)$' "variable set to empty string: \2"
+	scan '^[ =]*=(|""|''|)$' "variable set to empty string: \2"
 	scan '^(?!\s*^('"$variables"'))[^\s=-]+=' \
 		 "prefix custom variable with _: \2"
 	scan '^  ' "indent with tabs"
