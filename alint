@@ -158,11 +158,15 @@ for apkbuild; do
 	fi
 
 	if [ ! -z "$checkdepends" ]; then
-		printf "%s\n" "$checkdepends" | tr " " "\n" | sort -u | while read -r pkg; do
-			for p in $(find_repo "$pkg" "$_repo"); do
-				printf "$apkbuild:: checkdepends '$pkg' is in upper repo '$p'\n"
+		# We don't want to check for packages in upper repos for checkdepends if we
+		# don't have 'check' enabled.
+		if [ ! -z "${options##*!check*}" ]; then
+			printf "%s\n" "$checkdepends" | tr " " "\n" | sort -u | while read -r pkg; do
+				for p in $(find_repo "$pkg" "$_repo"); do
+					printf "$apkbuild:: checkdepends '$pkg' is in upper repo '$p'\n"
+				done
 			done
-		done
+		fi
 		printf "%s\n" "$checkdepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
 			[ -z "$dup" ] && continue
 			printf "$apkbuild:: duplicate '$dup' in checkdepends\n"
