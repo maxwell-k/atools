@@ -61,6 +61,18 @@ find_repo() {
 	esac
 }
 
+find_dupe() {
+	local pkgname="$1"
+	local repo="$2"
+
+	check_in_repo() { test -d "$1"/"$2" && echo "$1" ; }
+
+	for r in unmaintained testing community main; do
+		[ "$r" = "$repo" ] && continue
+		check_in_repo "$r" "$pkgname"
+	done
+}
+
 scan() {
 	local rx="$1" msg="$2"
 	grep -P -Hn -e "$rx" "$apkbuild" |
@@ -186,6 +198,11 @@ for apkbuild; do
 	scan '^\t*[^ ]*  *\(\)' 'do not use space before function parenthesis'
 	scan '^\t*[^ ]*\(\)(|   *){' 'use one space after function parenthesis'
 	scan '^\t*[^ ]*\(\)$' 'do not use a newline before function opening brace'
+
+	for _r in $(find_dupe "$pkgname" "$_repo"); do
+		printf "$apkbuild:: package is already present in $_r\n"
+	done
+
 	# Don't perform these checks on packages from main
 	if ! [ -z "${apkbuild##*main/*}" ]; then
 	for phase in build check package; do
