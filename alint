@@ -10,6 +10,57 @@
 
 export LC_ALL=C
 
+# Finds from which repo a package comes from
+# it can return multiple values if it finds multiple matches
+find_repo() {
+	[ -z "$1" ] || [ -z "$2" ] && return 0
+
+	local pkgname="$1"
+	# Repo the package we are linting currently is. We want it
+	# for avoiding checks on repos we don't want
+	local targetrepo="$2"
+
+	# Unmaintained is the top of the ladder, it can depend on any
+	# of the steps below
+	if [ "$targetrepo" = "unmaintained" ]; then
+		return 0
+	fi
+
+	# Perform some transformations that can be done easily and cheaply
+	# and are common.
+	#
+	# This is a hack until apk has something like xpkg -m or aports adopt
+	# the xbps-src symlinks
+	pkgname="${pkgname%-dev}"
+	pkgname="${pkgname%-doc}"
+	pkgname="${pkgname%-openrc}"
+	pkgname="${pkgname%-bash-completion}"
+	pkgname="${pkgname%-zsh-completion}"
+	pkgname="${pkgname%-fish-completion}"
+	# Disabled because it can cause conflicts with -dev packages, there is glade and libglade
+	# which are separate packages but end up causing false-postiives
+	# pkgname="${pkgname#lib}"
+	pkgname="${pkgname%-static}"
+	pkgname="${pkgname%-lang}"
+
+	check_in_repo() { test -d "$1"/"$2" && echo "$1" ; }
+
+	case "$targetrepo" in
+		testing) 
+			check_in_repo unmaintained "$pkgname"
+			;;
+		community)
+			check_in_repo unmaintained "$pkgname"
+			check_in_repo testing "$pkgname"
+			;;
+		main)
+			check_in_repo unmaintained "$pkgname"
+			check_in_repo testing "$pkgname"
+			check_in_repo community "$pkgname"
+			;;
+	esac
+}
+
 scan() {
 	local rx="$1" msg="$2"
 	grep -P -Hn -e "$rx" "$apkbuild" |
@@ -65,25 +116,59 @@ url" | tr '\n' '|')
 ret=0
 for apkbuild; do
 	if [ -f "$apkbuild" ]; then
-	# Source apkbuild
+
+	# Try to guess the repo, first see if our working directory is where
+	# the repo is located
+	_repo="$(basename "$(dirname "$(dirname $PWD)")")"
+	case "$repo" in
+		main|community|testing|unmaintained) ;;
+		# Then have the path given to use be used
+		*) _repo="$(basename "$(dirname "$(dirname $apkbuild)")")" ;;
+	esac
+
+	# Source apkbuild, we need some nice values
 	srcdir="" . "$apkbuild" 2>/dev/null
 	if [ "$builddir" = "/$pkgname-$pkgver" ]; then
 		scan '^builddir=' "builddir can be removed as it is the default value"
 	fi
-	# Find duplicates in
-	printf "%s\n" "$depends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
-		printf "$apkbuild:: duplicate '$dup' in depends\n"
-	done
-	printf "%s\n" "$makedepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
-		printf "$apkbuild:: duplicate '$dup' in makedepends\n"
-	done
-	printf "%s\n" "$checkdepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
-		printf "$apkbuild:: duplicate '$dup' in checkdepends\n"
-	done
-	printf "%s\n" "$depends_dev" | tr " " "\n" | sort | uniq -d | while read -r dup; do
 
-		printf "$apkbuild:: duplicate '$dup' in depends_dev\n"
-	done
+	if [ ! -z "$depends" ]; then
+		printf "%s\n" "$depends" | tr " " "\n" | sort -u | while read -r pkg; do
+			for p in $(find_repo "$pkg" "$_repo"); do
+				printf "$apkbuild:: depends '$pkg' is in upper repo '$p'\n"
+			done
+		done
+		# Find duplicates in
+		printf "%s\n" "$depends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
+			[ -z "$dup" ] && continue
+			printf "$apkbuild:: duplicate '$dup' in depends\n"
+		done
+	fi
+
+	if [ ! -z "$makedepends" ]; then
+		printf "%s\n" "$makedepends" | tr " " "\n" | sort -u | while read -r pkg; do
+			for p in $(find_repo "$pkg" "$_repo"); do
+				printf "$apkbuild:: makedepends '$pkg' is in upper repo '$p'\n"
+			done
+		done
+		printf "%s\n" "$makedepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
+			[ -z "$dup" ] && continue
+			printf "$apkbuild:: duplicate '$dup' in makedepends\n"
+		done
+	fi
+
+	if [ ! -z "$checkdepends" ]; then
+		printf "%s\n" "$checkdepends" | tr " " "\n" | sort -u | while read -r pkg; do
+			for p in $(find_repo "$pkg" "$_repo"); do
+				printf "$apkbuild:: checkdepends '$pkg' is in upper repo '$p'\n"
+			done
+		done
+		printf "%s\n" "$checkdepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
+			[ -z "$dup" ] && continue
+			printf "$apkbuild:: duplicate '$dup' in checkdepends\n"
+		done
+	fi
+
 	scan '\|\| return 1' "|| return 1 is not required as set -e is used"
 	scan '^pkgname="[^$]+"' "pkgname must not be quoted"
 	scan '^pkgver="[^$]+"' "pkgver must not be quoted"
@@ -107,8 +192,6 @@ for apkbuild; do
 			printf "$apkbuild:$l: cd \"\$builddir\" can be removed\n"
 		done
 	done
-	_pkgname="$(grep -Po "^pkgname=\K.*" "$apkbuild")"
-	_pkgver="$(grep -Po "^pkgver=\K.*" "$apkbuild")"
 	fi
 	else
 	echo no such apkbuild "$apkbuild" 1>&2
