@@ -62,8 +62,7 @@ find_repo() {
 }
 
 find_dupe() {
-	local pkgname="$1"
-	local repo="$2"
+	local pkgname="$1" repo="$2" r=
 
 	check_in_repo() { test -d "$1"/"$2" && echo "$1" ; }
 
@@ -125,6 +124,141 @@ triggers
 ldpath
 url" | tr '\n' '|')
 
+default_builddir_value() {
+	[ "$SKIP_DEFAULT_BUILDDIR_VALUE" ] && return 0
+	if [ "$builddir" = "/$pkgname-$pkgver" ]; then
+		scan '^builddir=' "builddir can be removed as it is the default value"
+	fi
+}
+
+upper_repo_depends() {
+	[ "$SKIP_UPPER_REPO_DEPENDS" ] && return 0
+	printf "%s\n" "$depends" | tr " " "\n" | sort -u | while read -r pkg; do
+		for p in $(find_repo "$pkg" "$_repo"); do
+			printf "$apkbuild:: depends '$pkg' is in upper repo '$p'\n"
+		done
+	done
+}
+
+duplicate_depends() {
+	[ "$SKIP_DUPLICATE_DEPENDS" ] && return 0
+	printf "%s\n" "$depends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
+		[ -z "$dup" ] && continue
+		printf "$apkbuild:: duplicate '$dup' in depends\n"
+	done
+}
+
+upper_repo_makedepends() {
+	[ "$SKIP_UPPER_REPO_MAKEDEPENDS" ] && return 0
+	printf "%s\n" "$makedepends" | tr " " "\n" | sort -u | while read -r pkg; do
+		for p in $(find_repo "$pkg" "$_repo"); do
+			printf "$apkbuild:: makedepends '$pkg' is in upper repo '$p'\n"
+		done
+	done
+}
+
+duplicate_makedepends() {
+	[ "$SKIP_DUPLICATE_MAKEDEPENDS" ] && return 0
+	printf "%s\n" "$makedepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
+		[ -z "$dup" ] && continue
+		printf "$apkbuild:: duplicate '$dup' in makedepends\n"
+	done
+}
+
+upper_repo_checkdepends() {
+	[ "$SKIP_UPPER_REPO_CHECKDEPENDS" ] && return 0
+	printf "%s\n" "$checkdepends" | tr " " "\n" | sort -u | while read -r pkg; do
+		for p in $(find_repo "$pkg" "$_repo"); do
+			printf "$apkbuild:: checkdepends '$pkg' is in upper repo '$p'\n"
+		done
+	done
+}
+
+duplicate_checkdepends() {
+	[ "$SKIP_DUPLICATE_CHECKDEPENDS" ] && return 0
+	printf "%s\n" "$checkdepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
+		[ -z "$dup" ] && continue
+		printf "$apkbuild:: duplicate '$dup' in checkdepends\n"
+	done
+}
+
+unnecessary_return_1() {
+	[ "$SKIP_UNNECESSARY_RETURN_1" ] && return 0
+	scan '\|\| return 1' "|| return 1 is not required as set -e is used"
+}
+
+pkgname_quoted() {
+	[ "$SKIP_PKGNAME_QUOTED" ] && return 0
+	scan '^pkgname="[^$]+"' "pkgname must not be quoted"
+}
+
+pkgver_quoted() {
+	[ "$SKIP_PKGVER_QUOTED" ] && return 0
+	scan '^pkgver="[^$]+"' "pkgver must not be quoted"
+}
+
+empty_variable() {
+	[ "$SKIP_EMPTY_VARIABLE" ] && return 0
+	scan '^[ =]*=(|""|''|)$' "variable set to empty string: \2"
+}
+
+custom_variable() {
+	[ "$SKIP_CUSTOM_VARIABLE" ] && return 0
+	scan '^(?!\s*^('"$variables"'))[^\s=-]+=' \
+		"prefix custom variable with _: \2"
+}
+
+indent_tabs() {
+	[ "$SKIP_INDENT_TABS" ] && return 0
+	scan '^  ' "indent with tabs"
+}
+
+trailing_whitespace() {
+	[ "$SKIP_TRAILING_WHITESPACE" ] && return 0
+	scan '[\t ]$' "trailing whitespace"
+}
+
+backticks_usage() {
+	[ "$SKIP_BACKTICKS_USAGE" ] && return 0
+	scan '[^\\]`' "use \$() instead of backticks"
+}
+
+function_keyword() {
+	[ "$SKIP_FUNCTION_KEYWORD" ] && return 0
+	scan '^\t*function\b' 'do not use the function keyword'
+}
+
+space_before_function_parenthesis() {
+	[ "$SKIP_SPACE_BEFORE_FUNCTION_PARENTHESIS" ] && return 0
+	scan '^\t*[^ ]*  *\(\)' 'do not use space before function parenthesis'
+}
+
+space_after_function_parenthesis() {
+	[ "$SKIP_SPACE_AFTER_FUNCTION_PARENTHESIS" ] && return 0
+	scan '^\t*[^ ]*\(\)(|   *){' 'use one space after function parenthesis'
+}
+
+newline_opening_brace() {
+	[ "$SKIP_NEWLINE_OPENING_BRACE" ] && return 0
+	scan '^\t*[^ ]*\(\)$' 'do not use a newline before function opening brace'
+}
+
+duplicate_package() {
+	for _r in $(find_dupe "$pkgname" "$_repo"); do
+		printf "$apkbuild:: package is already present in $_r\n"
+	done
+}
+
+superfluous_cd_builddir() {
+	[ "$SKIP_SUPERFLUOUS_CD_BUILDDIR" ] && return 0
+	sed -n "/^$1() {/,/^}/{p;=}" "$apkbuild" | grep -m 1 -B 1 'cd "$builddir"$' | head -1 | while read -r l; do
+		if [ -z "$l" ]; then
+			continue
+		fi
+		printf "$apkbuild:$l: cd \"\$builddir\" can be removed in phase '$1'\n"
+	done
+}
+
 ret=0
 for apkbuild; do
 	if [ -f "$apkbuild" ]; then
@@ -140,78 +274,46 @@ for apkbuild; do
 
 	# Source apkbuild, we need some nice values
 	srcdir="" . "$apkbuild" 2>/dev/null
-	if [ "$builddir" = "/$pkgname-$pkgver" ]; then
-		scan '^builddir=' "builddir can be removed as it is the default value"
-	fi
+	default_builddir_value
 
 	if [ ! -z "$depends" ]; then
-		printf "%s\n" "$depends" | tr " " "\n" | sort -u | while read -r pkg; do
-			for p in $(find_repo "$pkg" "$_repo"); do
-				printf "$apkbuild:: depends '$pkg' is in upper repo '$p'\n"
-			done
-		done
-		# Find duplicates in
-		printf "%s\n" "$depends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
-			[ -z "$dup" ] && continue
-			printf "$apkbuild:: duplicate '$dup' in depends\n"
-		done
+		upper_repo_depends
+		duplicate_depends
 	fi
 
 	if [ ! -z "$makedepends" ]; then
-		printf "%s\n" "$makedepends" | tr " " "\n" | sort -u | while read -r pkg; do
-			for p in $(find_repo "$pkg" "$_repo"); do
-				printf "$apkbuild:: makedepends '$pkg' is in upper repo '$p'\n"
-			done
-		done
-		printf "%s\n" "$makedepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
-			[ -z "$dup" ] && continue
-			printf "$apkbuild:: duplicate '$dup' in makedepends\n"
-		done
+		upper_repo_makedepends
+		duplicate_makedepends
 	fi
 
 	if [ ! -z "$checkdepends" ]; then
-		# We don't want to check for packages in upper repos for checkdepends if we
-		# don't have 'check' enabled.
 		if [ ! -z "${options##*!check*}" ]; then
-			printf "%s\n" "$checkdepends" | tr " " "\n" | sort -u | while read -r pkg; do
-				for p in $(find_repo "$pkg" "$_repo"); do
-					printf "$apkbuild:: checkdepends '$pkg' is in upper repo '$p'\n"
-				done
-			done
+			upper_repo_checkdepends
 		fi
-		printf "%s\n" "$checkdepends" | tr " " "\n" | sort | uniq -d | while read -r dup; do
-			[ -z "$dup" ] && continue
-			printf "$apkbuild:: duplicate '$dup' in checkdepends\n"
-		done
+		duplicate_checkdepends
 	fi
 
-	scan '\|\| return 1' "|| return 1 is not required as set -e is used"
-	scan '^pkgname="[^$]+"' "pkgname must not be quoted"
-	scan '^pkgver="[^$]+"' "pkgver must not be quoted"
-	scan '^[ =]*=(|""|''|)$' "variable set to empty string: \2"
-	scan '^(?!\s*^('"$variables"'))[^\s=-]+=' \
-		 "prefix custom variable with _: \2"
-	scan '^  ' "indent with tabs"
-	scan '[\t ]$' "trailing whitespace"
-	scan '[^\\]`' "use \$() instead of backticks"
-	scan '^\t*function\b' 'do not use the function keyword'
-	scan '^\t*[^ ]*  *\(\)' 'do not use space before function parenthesis'
-	scan '^\t*[^ ]*\(\)(|   *){' 'use one space after function parenthesis'
-	scan '^\t*[^ ]*\(\)$' 'do not use a newline before function opening brace'
+	unnecessary_return_1
+	pkgname_quoted
+	pkgver_quoted
+	empty_variable
+	custom_variable
+	indent_tabs
+	trailing_whitespace
+	backticks_usage
+	function_keyword
+	space_before_function_parenthesis
+	space_after_function_parenthesis
+	newline_opening_brace
 
-	for _r in $(find_dupe "$pkgname" "$_repo"); do
-		printf "$apkbuild:: package is already present in $_r\n"
-	done
+	if [ -z "$SKIP_DUPLICATE_PACKAGE" ]; then
+		duplicate_package
+	fi
 
 	# Don't perform these checks on packages from main
 	if ! [ -z "${apkbuild##*main/*}" ]; then
-	for phase in build check package; do
-		sed -n "/^$phase() {/,/^}/{p;=}" "$apkbuild" | grep -m 1 -B 1 'cd "$builddir"$' | head -1 | while read -r l; do
-			if [ -z "$l" ]; then
-				continue
-			fi
-			printf "$apkbuild:$l: cd \"\$builddir\" can be removed\n"
-		done
+	for phase in prepare build check package; do
+		superfluous_cd_builddir "$phase"
 	done
 	fi
 	else
