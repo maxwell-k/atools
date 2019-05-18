@@ -11,7 +11,7 @@ of what it does and a rationale. each test can be skipped by setting an
 environment variable formed by SKIP_ + the tag in uppercase with dashes replaced
 by underscore.
 
-# aports-lint TAGS
+# TAGS (aports-lint)
 
 The following tags are used by the *aports-lint* program.
 
@@ -77,7 +77,7 @@ The APKBUILD has duplicate checkdepends. One of them must be removed.
 
 Declaring duplicate dependencies is superfluous.
 
-# apkbuild-lint TAGS
+# TAGS (apkbuild-lint)
 
 The following tags are used by the *apkbuild-lint* program
 
