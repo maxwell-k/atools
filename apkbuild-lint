@@ -138,21 +138,6 @@ ret=0
 for apkbuild; do
 	if [ -f "$apkbuild" ]; then
 
-	# Try to guess the repo, first see if our working directory is where
-	# the repo is located
-	_repo="${PWD%/*}"
-	_repo="${repo%/*}"
-	_repo="${repo##*/}"
-	case "$repo" in
-		main|community|testing|unmaintained) ;;
-		# Then have the path given to use be used
-		*)
-			_repo="${apkbuild%/*}"
-			_repo="${repo%/*}"
-			_repo="${repo##*/}"
-			;;
-	esac
-
 	# Source apkbuild, we need some nice values
 	srcdir="" . "$apkbuild" 2>/dev/null
 	default_builddir_value &
@@ -169,10 +154,6 @@ for apkbuild; do
 	space_before_function_parenthesis &
 	space_after_function_parenthesis &
 	newline_opening_brace &
-
-	if [ -z "$SKIP_DUPLICATE_PACKAGE" ]; then
-		duplicate_package &
-	fi
 
 	# Don't perform these checks on packages from main
 	if ! [ -z "${apkbuild##*main/*}" ]; then

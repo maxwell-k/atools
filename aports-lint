@@ -126,15 +126,15 @@ for apkbuild; do
 	# Try to guess the repo, first see if our working directory is where
 	# the repo is located
 	_repo="${PWD%/*}"
-	_repo="${repo%/*}"
-	_repo="${repo##*/}"
-	case "$repo" in
+	_repo="${_repo%/*}"
+	_repo="${_repo##*/}"
+	case "$_repo" in
 		main|community|testing|unmaintained) ;;
 		# Then have the path given to use be used
 		*)
 			_repo="${apkbuild%/*}"
-			_repo="${repo%/*}"
-			_repo="${repo##*/}"
+			_repo="${_repo%/*}"
+			_repo="${_repo##*/}"
 			;;
 	esac
 
