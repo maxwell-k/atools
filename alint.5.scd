@@ -9,14 +9,25 @@ alint - linting tags
 A tag is an attribute given to each test in alint, each tag has an explanation
 of what it does and a rationale. each test can be skipped by setting an
 environment variable formed by SKIP_ + the tag in uppercase with dashes replaced
-by .
+by underscore.
 
-## default-builddir-value
+# aports-lint TAGS
 
-The value of builddir matches the default which is *$srcdir/$pkgname-$pkgver*.
-The *builddir* declaration can be removed.
+The following tags are used by the *aports-lint* program.
 
-Starting with v2.29.0 of *abuild* the value is set automatically.
+## Duplicate package
+
+The Package being introduced is already present in another repo solve the
+conflict by either:
+
+- Merging the changes into the already existing package
+- Deleting the old package
+
+Duplicate packages will shadow eachother in the repo and the one with the
+higher version will win, it can also cause programs to compile against
+the wrong version of a package. E.g: if *main/foo-1-r0* and *testing/foo-2-r0* exist
+and *main/bar* is updated to version 2 which requires *foo>=2-r0* then it will
+fail because it will only find *main/foo-1-r0* and not *testing/foo-2-r0*.
 
 ## upper-repo-depends
 
@@ -65,6 +76,17 @@ only. Packages in unmaintained can checkdepend on package on any repo but non-fr
 The APKBUILD has duplicate checkdepends. One of them must be removed.
 
 Declaring duplicate dependencies is superfluous.
+
+# apkbuild-lint TAGS
+
+The following tags are used by the *apkbuild-lint* program
+
+## default-builddir-value
+
+The value of builddir matches the default which is *$srcdir/$pkgname-$pkgver*.
+The *builddir* declaration can be removed.
+
+Starting with v2.29.0 of *abuild* the value is set automatically.
 
 ## unnecessary-return-1
 
@@ -134,20 +156,6 @@ than one space. Use only one space after the function parenthesis.
 The APKBUILD has a newline before the opening brace of a function. Put the
 opening brace in the same line as the declaration with one space after the
 function parenthesis.
-
-## Duplicate package
-
-The Package being introduced is already present in another repo solve the
-conflict by either:
-
-- Merging the changes into the already existing package
-- Deleting the old package
-
-Duplicate packages will shadow eachother in the repo and the one with the
-higher version will win, it can also cause programs to compile against
-the wrong version of a package. E.g: if *main/foo-1-r0* and *testing/foo-2-r0* exist
-and *main/bar* is updated to version 2 which requires *foo>=2-r0* then it will
-fail because it will only find *main/foo-1-r0* and not *testing/foo-2-r0*.
 
 ## superfluous-cd-builddir
 

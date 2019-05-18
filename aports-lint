@@ -1,13 +1,4 @@
 #!/bin/sh
-# alint APKBUILD - scan APKBUILD template for common mistakes
-#
-# Adapted from xlint from Void Linux's xtools to Alpine Linux
-# https://github.com/leahneukirchen/xtools/
-#
-# Required packages (names are Alpine Linux pkgs):
-# busybox - for sed, tr, sort and other simple utiltiies
-# grep - for grep with -P
-
 export LC_ALL=C
 
 # Finds from which repo a package comes from
@@ -72,61 +63,6 @@ find_dupe() {
 	done
 }
 
-scan() {
-	local rx="$1" msg="$2"
-	grep -P -Hn -e "$rx" "$apkbuild" |
-		sed "s/^\([^:]*:[^:]*:\)\(.*\)/\1 $msg/"
-}
-
-variables=$(echo -n "#.*
-_.*
-startdir
-srcdir
-pkgdir
-subpkgdir
-builddir
-arch
-depends
-depends_dev
-checkdepends
-giturl
-install
-.*.pre-install
-.*.post-install
-.*.pre-upgrade
-.*.post-upgrade
-.*.pre-deinstall
-.*.post-deinstall
-install_if
-license
-makedepends
-md5sums
-sha256sums
-sha512sums
-options
-pkgdesc
-pkggroups
-pkgname
-pkgrel
-pkgusers
-pkgver
-provides
-provider_priority
-replaces
-replaces_priority
-source
-subpackages
-triggers
-ldpath
-url" | tr '\n' '|')
-
-default_builddir_value() {
-	[ "$SKIP_DEFAULT_BUILDDIR_VALUE" ] && return 0
-	if [ "$builddir" = "/$pkgname-$pkgver" ]; then
-		scan '^builddir=' "builddir can be removed as it is the default value"
-	fi
-}
-
 upper_repo_depends() {
 	[ "$SKIP_UPPER_REPO_DEPENDS" ] && return 0
 	printf "%s\n" "$depends" | tr " " "\n" | sort -u | while read -r pkg; do
@@ -178,82 +114,12 @@ duplicate_checkdepends() {
 	done
 }
 
-unnecessary_return_1() {
-	[ "$SKIP_UNNECESSARY_RETURN_1" ] && return 0
-	scan '\|\| return 1' "|| return 1 is not required as set -e is used"
-}
-
-pkgname_quoted() {
-	[ "$SKIP_PKGNAME_QUOTED" ] && return 0
-	scan '^pkgname="[^$]+"' "pkgname must not be quoted"
-}
-
-pkgver_quoted() {
-	[ "$SKIP_PKGVER_QUOTED" ] && return 0
-	scan '^pkgver="[^$]+"' "pkgver must not be quoted"
-}
-
-empty_variable() {
-	[ "$SKIP_EMPTY_VARIABLE" ] && return 0
-	scan '^[ =]*=(|""|''|)$' "variable set to empty string: \2"
-}
-
-custom_variable() {
-	[ "$SKIP_CUSTOM_VARIABLE" ] && return 0
-	scan '^(?!\s*^('"$variables"'))[^\s=-]+=' \
-		"prefix custom variable with _: \2"
-}
-
-indent_tabs() {
-	[ "$SKIP_INDENT_TABS" ] && return 0
-	scan '^  ' "indent with tabs"
-}
-
-trailing_whitespace() {
-	[ "$SKIP_TRAILING_WHITESPACE" ] && return 0
-	scan '[\t ]$' "trailing whitespace"
-}
-
-backticks_usage() {
-	[ "$SKIP_BACKTICKS_USAGE" ] && return 0
-	scan '[^\\]`' "use \$() instead of backticks"
-}
-
-function_keyword() {
-	[ "$SKIP_FUNCTION_KEYWORD" ] && return 0
-	scan '^\t*function\b' 'do not use the function keyword'
-}
-
-space_before_function_parenthesis() {
-	[ "$SKIP_SPACE_BEFORE_FUNCTION_PARENTHESIS" ] && return 0
-	scan '^\t*[^ ]*  *\(\)' 'do not use space before function parenthesis'
-}
-
-space_after_function_parenthesis() {
-	[ "$SKIP_SPACE_AFTER_FUNCTION_PARENTHESIS" ] && return 0
-	scan '^\t*[^ ]*\(\)(|   *){' 'use one space after function parenthesis'
-}
-
-newline_opening_brace() {
-	[ "$SKIP_NEWLINE_OPENING_BRACE" ] && return 0
-	scan '^\t*[^ ]*\(\)$' 'do not use a newline before function opening brace'
-}
-
 duplicate_package() {
 	for _r in $(find_dupe "$pkgname" "$_repo"); do
 		printf "$apkbuild:: package is already present in $_r\n"
 	done
 }
 
-superfluous_cd_builddir() {
-	[ "$SKIP_SUPERFLUOUS_CD_BUILDDIR" ] && return 0
-	sed -n "/^$1() {/,/^}/{p;=}" "$apkbuild" | grep -m 1 -B 1 'cd "$builddir"$' | head -1 | while read -r l; do
-		[ -z "$l" ] && continue
-		printf "$apkbuild:$l: cd \"\$builddir\" can be removed in phase '$1'\n"
-	done
-}
-
-ret=0
 for apkbuild; do
 	if [ -f "$apkbuild" ]; then
 
@@ -274,7 +140,6 @@ for apkbuild; do
 
 	# Source apkbuild, we need some nice values
 	srcdir="" . "$apkbuild" 2>/dev/null
-	default_builddir_value &
 
 	if [ ! -z "$depends" ]; then
 		upper_repo_depends &
@@ -293,30 +158,12 @@ for apkbuild; do
 		duplicate_checkdepends &
 	fi
 
-	unnecessary_return_1 &
-	pkgname_quoted &
-	pkgver_quoted &
-	empty_variable &
-	custom_variable &
-	indent_tabs &
-	trailing_whitespace &
-	backticks_usage &
-	function_keyword &
-	space_before_function_parenthesis &
-	space_after_function_parenthesis &
-	newline_opening_brace &
-
 	if [ -z "$SKIP_DUPLICATE_PACKAGE" ]; then
 		duplicate_package &
 	fi
 
-	# Don't perform these checks on packages from main
-	if ! [ -z "${apkbuild##*main/*}" ]; then
-	for phase in prepare build check package; do
-		superfluous_cd_builddir "$phase" &
-	done
-	fi
 	wait
+
 	else
 	echo no such apkbuild "$apkbuild" 1>&2
 	fi | sort -t: -n -k2 | grep . && ret=1
