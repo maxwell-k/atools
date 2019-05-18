@@ -56,6 +56,7 @@ source
 subpackages
 triggers
 ldpath
+sonameprefix
 url" | tr '\n' '|')
 
 default_builddir_value() {
