@@ -7,9 +7,9 @@ alint - linting tags
 # DESCRIPTION
 
 A tag is an attribute given to each test in alint, each tag has an explanation
-of what it does and a rationale. each test can be skipped by setting an
-environment variable formed by SKIP_ + the tag in uppercase with dashes replaced
-by underscore.
+of what it does and a brief on how to resolve it. each test can be skipped by 
+setting an environment variable formed by SKIP_ + the tag in uppercase with the
+dashes replaced by underscore.
 
 # TAGS (aports-lint)
 
@@ -17,11 +17,11 @@ The following tags are used by the *aports-lint* program.
 
 ## Duplicate package
 
-The Package being introduced is already present in another repo solve the
-conflict by either:
+The Package being introduced is already present in another repo. Solve the
+conflict by:
 
-- Merging the changes into the already existing package
-- Deleting the old package
+- If the package in the uppermost repo has more recent changes, merge them.
+- Then delete the package in the upper repo.
 
 Duplicate packages will shadow eachother in the repo and the one with the
 higher version will win, it can also cause programs to compile against
@@ -53,7 +53,7 @@ to the upper repo or the dependency moved to the repo the package is.
 Packages cannot makedepend on a package on an upper repo. Packages in main cannot
 makedepend on packages in other repos. Packages in community can depend on main
 and itself only. Packages in testing can makedepend on main, community and itself
-only. Packages in unmaintained can makedepend on package on any repo but non-free.
+only. Packages in unmaintained can makedepend on packages of any repo but non-free.
 
 ## duplicate-makedepends
 
@@ -163,4 +163,5 @@ The APKBUILD has *cd "$builddir"* statements that are superfluous. Remove them.
 
 Staring with v3.3.0 of *abuild* the *prepare*, *build*, *check* and *package*
 functions automatically have their working directory set to the value of
-*builddir*
+*builddir*. It is also possible that there are 2 *cd "$builddir"* statements
+one after the other.
