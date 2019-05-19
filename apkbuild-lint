@@ -129,10 +129,48 @@ newline_opening_brace() {
 
 superfluous_cd_builddir() {
 	[ "$SKIP_SUPERFLUOUS_CD_BUILDDIR" ] && return 0
-	sed -n "/^$1() {/,/^}/{p;=}" "$apkbuild" | grep -m 1 -B 1 'cd "$builddir"$' | head -1 | while read -r l; do
-		[ -z "$l" ] && continue
-		printf "$apkbuild:$l: cd \"\$builddir\" can be removed in phase '$1'\n"
+	local cds= cdscount= prevcd= phase="$1"
+
+	# All ocurrences of the 'cd' command being used
+	# 1. Print file with line numbers.
+	# 2. Print the function from the opening declaration up to the closing bracked
+	# 3. grep for all ocurrences of the 'cd' command (ignore obviously invalid ones
+	#	like matching 'cd' until the end of the line)
+	cds="$(cat -n "$apkbuild" \
+		   | sed -n "/^   [0-9].*\t$phase() {/,/[0-9].*\t}/p" \
+		   | grep '\bcd ')" 
+
+	# Number of ocurrences of the 'cd' command being used
+	# Used to tell if we are in a phase() with a single cd statement
+	# in that case we can be free to warn the user that their cd statement
+	# is superfluous if it is to "$builddir", this avoids problems of previous
+	# 'cd' statements to other places giving false positives
+	cdscount="$(printf "%s\\n" "$cds" | wc -l)"
+
+	# if the previous line had a 'cd "$builddir"' statement
+	prevcd=0
+
+	# Use newline as our IFS delimiter, so we can iterate over lines with
+	# the for construct, since the while loop will create a subshell that
+	# prevents the value of the prevcd variable from being propagated
+	# to future runs
+	OLDIFS="$IFS"
+	IFS="
+"
+	for line in $(printf "%s\\n" "$cds"); do
+		linenum="$(printf "%s\\n" "$line" | awk '{ print $1 }')"
+		statement="$(printf "%s\\n" "$line" | awk '{ $1="" ; print $0 }')"
+		[ -z "$statement" ] && continue
+		if echo "$statement" | grep -q 'cd "$builddir"\($\| \)'; then
+			if [ "$prevcd" -eq 1 ] || [ "$cdscount" -eq 1 ]; then
+				printf "%s:%s: cd \"\$builddir\" can be removed in phase '%s'\\n" "$apkbuild" "$linenum" "$phase" 
+			fi
+			prevcd=1
+		else
+			prevcd=0
+		fi
 	done
+	IFS="$OLDIFS"
 }
 
 ret=0
