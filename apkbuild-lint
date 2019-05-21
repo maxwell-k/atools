@@ -178,7 +178,7 @@ for apkbuild; do
 	if [ -f "$apkbuild" ]; then
 
 	# Source apkbuild, we need some nice values
-	srcdir="" . "$apkbuild" 2>/dev/null
+	srcdir="" . ./"$apkbuild" 2>/dev/null
 	default_builddir_value &
 
 	unnecessary_return_1 &

@@ -139,7 +139,7 @@ for apkbuild; do
 	esac
 
 	# Source apkbuild, we need some nice values
-	srcdir="" . "$apkbuild" 2>/dev/null
+	srcdir="" . ./"$apkbuild" 2>/dev/null
 
 	if [ ! -z "$depends" ]; then
 		upper_repo_depends &
