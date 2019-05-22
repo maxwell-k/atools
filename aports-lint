@@ -115,6 +115,7 @@ duplicate_checkdepends() {
 }
 
 duplicate_package() {
+	[ "$SKIP_DUPLICATE_PACKAGE" ] && return 0
 	for _r in $(find_dupe "$pkgname" "$_repo"); do
 		printf "$apkbuild:: package is already present in $_r\n"
 	done
