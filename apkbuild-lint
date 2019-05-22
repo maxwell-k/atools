@@ -83,7 +83,7 @@ pkgver_quoted() {
 
 empty_variable() {
 	[ "$SKIP_EMPTY_VARIABLE" ] && return 0
-	scan '^[ =]*=(|""|''|)$' "variable set to empty string: \2"
+	scan '^[A-Za-z0-9_]*=(""|''|)$' "variable set to empty string: \2"
 }
 
 custom_variable() {
@@ -178,7 +178,7 @@ for apkbuild; do
 	if [ -f "$apkbuild" ]; then
 
 	# Source apkbuild, we need some nice values
-	srcdir="" . ./"$apkbuild" 2>/dev/null
+	srcdir="" . "$apkbuild" 2>/dev/null
 	default_builddir_value &
 
 	unnecessary_return_1 &
