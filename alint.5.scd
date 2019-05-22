@@ -77,6 +77,11 @@ The APKBUILD has duplicate checkdepends. One of them must be removed.
 
 Declaring duplicate dependencies is superfluous.
 
+## pkgname_dirname_mismatch
+
+The pkgname variable of the APKBUILD has value *foo* but the directory in which the
+APKBUILD is found is not named *foo*
+
 # TAGS (apkbuild-lint)
 
 The following tags are used by the *apkbuild-lint* program

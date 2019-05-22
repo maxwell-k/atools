@@ -120,6 +120,21 @@ duplicate_package() {
 	done
 }
 
+pkgname_dirname_mismatch() {
+	[ "$SKIP_PKGNAME_DIRNAME_MISMATCH" ] && return 0
+	local _dirname=
+	case "${apkbuild%%/*}" in
+		main|community|testing|unmaintained|non-free)
+			_dirname="${apkbuild%/*}"
+			_dirname="${_dirname##*/}"
+			;;
+		*) return 0 ;;
+	esac
+	if [ "$pkgname" != "$_dirname" ]; then
+		printf "$apkbuild:: pkgname is '$pkgname' but is in directory '$_dirname'\n"
+	fi
+}
+
 for apkbuild; do
 	if [ -f "$apkbuild" ]; then
 
@@ -161,6 +176,8 @@ for apkbuild; do
 	if [ -z "$SKIP_DUPLICATE_PACKAGE" ]; then
 		duplicate_package &
 	fi
+
+	pkgname_dirname_mismatch &
 
 	wait
 
