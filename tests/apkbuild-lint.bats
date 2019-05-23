@@ -10,6 +10,10 @@ assert_match() {
 	echo "$output" | grep -qE "$expected"
 }
 
+is_travis() {
+	test -n "$TRAVIS"
+}
+
 @test 'default builddir can be removed' {
 	cat <<-"EOF" >$apkbuild
 	pkgname=a
@@ -176,6 +180,7 @@ assert_match() {
 }
 
 @test 'function keyword should not be used' {
+	is_travis && skip "Broken on CI"
 	cat <<-"EOF" >$apkbuild
 	pkgname=a
 	pkgver=1
