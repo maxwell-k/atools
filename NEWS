@@ -1,0 +1,15 @@
+CHANGES with 9:
+
+- Implement build system based on redo (@Ikke)
+- Fix sourcing of variable with bash in posix SH compatibility mode (@maxice8)
+- Add pkgname-dirname-mismatch (@maxice8)
+- Add missing SKIP_* directive to duplicate-package (@maxice8)
+- Add initial testsuite based on bats (@Ikke)
+- Fix parsing with different cat -n outputs (@Ikke)
+- Fix pkgname-has-uppercase and expand its scope (@maxice8)
+- Add tests for pkgname-has-uppercase (@maxice8)
+- Add travis-ci support via .travis.yml (@maxice8)
+- Add pkgver-has-pkgrel (@maxice8)
+- Skip broken test on travis-ci (@maxice8)
+- Do small fix in README.md (@maxice8)
+- Write first version of NEWS
