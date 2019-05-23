@@ -329,7 +329,25 @@ is_travis() {
 
 	run $cmd $apkbuild
 	[[ $status -eq 1 ]]
-	assert_match "${lines[0]}" "pkgver must not have -rN"
+	assert_match "${lines[0]}" "pkgver must not have -r or _r"
+
+	cat <<-"EOF" >$apkbuild
+	pkgname=foo
+	pkgver=0.1_r3a1
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgver must not have -r or _r"
+
+	cat <<-"EOF" >$apkbuild
+	pkgname=foo
+	pkgver=02-r3a1
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgver must not have -r or _r"
 }
 
 # vim: noexpandtab
