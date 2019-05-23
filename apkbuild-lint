@@ -175,7 +175,7 @@ superfluous_cd_builddir() {
 
 pkgname_has_uppercase() {
 	[ "$SKIP_PKGNAME_HAS_UPPERCASE" ] && return 0
-	scan '^pkgname=*[A-Z]*' 'pkgname must not have uppercase characters'
+	scan '^pkgname=[a-z]*[A-Z]' 'pkgname must not have uppercase characters'
 }
 
 ret=0
@@ -183,7 +183,7 @@ for apkbuild; do
 	if [ -f "$apkbuild" ]; then
 
 	# Source apkbuild, we need some nice values
-	srcdir="" . "$apkbuild" 2>/dev/null
+	srcdir="" . "$apkbuild"
 	default_builddir_value &
 
 	unnecessary_return_1 &
