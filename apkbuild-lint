@@ -175,7 +175,12 @@ superfluous_cd_builddir() {
 
 pkgname_has_uppercase() {
 	[ "$SKIP_PKGNAME_HAS_UPPERCASE" ] && return 0
-	scan '^pkgname=[a-z]*[A-Z]' 'pkgname must not have uppercase characters'
+	scan '^pkgname=[a-z0-9\._\-]*[A-Z]' 'pkgname must not have uppercase characters'
+}
+
+pkgver_has_pkgrel() {
+	[ "$SKIP_PKGVER_HAS_PKGREL" ] && return 0
+	scan '^pkgver=[A-Za-z0-9_-]*-r[0-9]' 'pkgver must not have -rN'
 }
 
 ret=0
@@ -199,6 +204,7 @@ for apkbuild; do
 	space_after_function_parenthesis &
 	newline_opening_brace &
 	pkgname_has_uppercase &
+	pkgver_has_pkgrel &
 
 	# Don't perform these checks on packages from main
 	if ! [ -z "${apkbuild##*main/*}" ]; then
