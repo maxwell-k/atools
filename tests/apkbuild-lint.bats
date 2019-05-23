@@ -269,7 +269,7 @@ assert_match() {
 	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
 
 	cat <<-"EOF" >$apkbuild
-	pkgname=fOo
+	pkgname=foo-FONT
 	EOF
 
 	run $cmd $apkbuild
@@ -277,14 +277,14 @@ assert_match() {
 	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
 
 	cat <<-"EOF" >$apkbuild
-	pkgname=fOo
+	pkgname=f_oO
 	EOF
 
 	run $cmd $apkbuild
 	[[ $status -eq 1 ]]
 	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
 	cat <<-"EOF" >$apkbuild
-	pkgname=FOO
+	pkgname=f.o.O
 	EOF
 
 	run $cmd $apkbuild
@@ -292,7 +292,7 @@ assert_match() {
 	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
 
 	cat <<-"EOF" >$apkbuild
-	pkgname=fOO
+	pkgname=9Foo
 	EOF
 
 	run $cmd $apkbuild
@@ -308,5 +308,23 @@ assert_match() {
 	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
 }
 
+@test 'pkgname must not have -rN' {
+	cat <<-"EOF" >$apkbuild
+	pkgname=foo
+	pkgver=1
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 0 ]]
+	
+	cat <<-"EOF" >$apkbuild
+	pkgname=foo
+	pkgver=1-r3
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgver must not have -rN"
+}
 
 # vim: noexpandtab
