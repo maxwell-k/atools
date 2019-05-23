@@ -252,4 +252,61 @@ assert_match() {
 	assert_match "${lines[0]}" "builddir.*can be removed"
 }
 
+@test 'pkgname must not have uppercase characters' {
+	cat <<-"EOF" >$apkbuild
+	pkgname=foo
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 0 ]]
+
+	cat <<-"EOF" >$apkbuild
+	pkgname=Foo
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
+
+	cat <<-"EOF" >$apkbuild
+	pkgname=fOo
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
+
+	cat <<-"EOF" >$apkbuild
+	pkgname=fOo
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
+	cat <<-"EOF" >$apkbuild
+	pkgname=FOO
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
+
+	cat <<-"EOF" >$apkbuild
+	pkgname=fOO
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
+
+	cat <<-"EOF" >$apkbuild
+	pkgname=FoO
+	EOF
+
+	run $cmd $apkbuild
+	[[ $status -eq 1 ]]
+	assert_match "${lines[0]}" "pkgname must not have uppercase characters"
+}
+
+
 # vim: noexpandtab
