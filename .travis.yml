@@ -1,0 +1,10 @@
+language: bash
+sudo: required
+before_install:
+  - sudo add-apt-repository ppa:duggan/bats --yes
+  - sudo apt-get update -q
+  - sudo apt-get install -q bats
+script:
+    - bats tests/apkbuild-lint.bats
+notifications:
+    email: true
