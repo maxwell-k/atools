@@ -174,3 +174,8 @@ one after the other.
 ## pkgname-has-uppercase-characters
 
 pkgname has uppercase characters, pkgname must have only lowercase characters.
+
+## pkgver-has-pkgrel
+
+pkgver has *-r* followed by a number, that is reserved for the relaease of a package
+as defined by the *pkgrel* variable.
