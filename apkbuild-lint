@@ -173,6 +173,11 @@ superfluous_cd_builddir() {
 	IFS="$OLDIFS"
 }
 
+pkgname_has_uppercase() {
+	[ "$SKIP_PKGNAME_HAS_UPPERCASE" ] && return 0
+	scan '^pkgname=*[A-Z]*' 'pkgname must not have uppercase characters'
+}
+
 ret=0
 for apkbuild; do
 	if [ -f "$apkbuild" ]; then
@@ -193,6 +198,7 @@ for apkbuild; do
 	space_before_function_parenthesis &
 	space_after_function_parenthesis &
 	newline_opening_brace &
+	pkgname_has_uppercase &
 
 	# Don't perform these checks on packages from main
 	if ! [ -z "${apkbuild##*main/*}" ]; then

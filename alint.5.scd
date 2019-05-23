@@ -77,7 +77,7 @@ The APKBUILD has duplicate checkdepends. One of them must be removed.
 
 Declaring duplicate dependencies is superfluous.
 
-## pkgname_dirname_mismatch
+## pkgname-dirname-mismatch
 
 The pkgname variable of the APKBUILD has value *foo* but the directory in which the
 APKBUILD is found is not named *foo*
@@ -170,3 +170,7 @@ Staring with v3.3.0 of *abuild* the *prepare*, *build*, *check* and *package*
 functions automatically have their working directory set to the value of
 *builddir*. It is also possible that there are 2 *cd "$builddir"* statements
 one after the other.
+
+## pkgname-has-uppercase-characters
+
+pkgname has uppercase characters, pkgname must have only lowercase characters.
