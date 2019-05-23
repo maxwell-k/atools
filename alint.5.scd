@@ -171,7 +171,7 @@ functions automatically have their working directory set to the value of
 *builddir*. It is also possible that there are 2 *cd "$builddir"* statements
 one after the other.
 
-## pkgname-has-uppercase-characters
+## pkgname-has-uppercase
 
 pkgname has uppercase characters, pkgname must have only lowercase characters.
 
