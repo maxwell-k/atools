@@ -68,7 +68,7 @@ url" | tr '\n' '|')
 default_builddir_value() {
 	[ "$SKIP_DEFAULT_BUILDDIR_VALUE" ] && return 0
 	if [ "$builddir" = "/$pkgname-$pkgver" ]; then
-		scan_gnu '^builddir=' "builddir can be removed as it is the default value"
+		scan '^builddir=' "builddir can be removed as it is the default value"
 	fi
 }
 
@@ -100,22 +100,22 @@ custom_variable() {
 
 indent_tabs() {
 	[ "$SKIP_INDENT_TABS" ] && return 0
-	scan_gnu '^  ' "indent with tabs"
+	scan '^  ' "indent with tabs"
 }
 
 trailing_whitespace() {
 	[ "$SKIP_TRAILING_WHITESPACE" ] && return 0
-	scan_gnu '[\t ]$' "trailing whitespace"
+	scan '[\t ]$' "trailing whitespace"
 }
 
 backticks_usage() {
 	[ "$SKIP_BACKTICKS_USAGE" ] && return 0
-	scan_gnu '[^\\]`' "use \$() instead of backticks"
+	scan '[^\\]`' "use \$() instead of backticks"
 }
 
 function_keyword() {
 	[ "$SKIP_FUNCTION_KEYWORD" ] && return 0
-	scan_gnu '^\t*function\b' 'do not use the function keyword'
+	scan '^\t*function\b' 'do not use the function keyword'
 }
 
 space_before_function_parenthesis() {
@@ -186,7 +186,7 @@ pkgname_has_uppercase() {
 
 pkgver_has_pkgrel() {
 	[ "$SKIP_PKGVER_HAS_PKGREL" ] && return 0
-	scan_gnu '^pkgver=[A-Za-z0-9_\-\.]*[-_]r' 'pkgver must not have -r or _r'
+	scan '^pkgver=[A-Za-z0-9_\-\.]*[-_]r' 'pkgver must not have -r or _r'
 }
 
 ret=0
