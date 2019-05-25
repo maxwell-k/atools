@@ -16,6 +16,12 @@ scan_gnu() {
 		sed "s/^\([^:]*:[^:]*:\)\(.*\)/\1 $msg/"
 }
 
+scan() {
+	local rx="$1" msg="$2"
+	busybox grep -Hn -e "$rx" "$apkbuild" |
+		sed "s/^\([^:]*:[^:]*:\)\(.*\)/\1 $msg/"
+}
+
 variables=$(echo -n "#.*
 _.*
 startdir
@@ -175,7 +181,7 @@ superfluous_cd_builddir() {
 
 pkgname_has_uppercase() {
 	[ "$SKIP_PKGNAME_HAS_UPPERCASE" ] && return 0
-	scan_gnu '^pkgname=[a-z0-9\._\-]*[A-Z]' 'pkgname must not have uppercase characters'
+	scan '^pkgname=[a-z0-9\._\-]*[A-Z]' 'pkgname must not have uppercase characters'
 }
 
 pkgver_has_pkgrel() {
