@@ -18,7 +18,7 @@ scan_gnu() {
 
 scan() {
 	local rx="$1" msg="$2"
-	busybox grep -Hn -e "$rx" "$apkbuild" |
+	busybox grep -E -Hn -e "$rx" "$apkbuild" |
 		sed "s/^\([^:]*:[^:]*:\)\(.*\)/\1 $msg/"
 }
 
@@ -74,22 +74,22 @@ default_builddir_value() {
 
 unnecessary_return_1() {
 	[ "$SKIP_UNNECESSARY_RETURN_1" ] && return 0
-	scan_gnu '\|\| return 1' "|| return 1 is not required as set -e is used"
+	scan '\|\| return 1' "|| return 1 is not required as set -e is used"
 }
 
 pkgname_quoted() {
 	[ "$SKIP_PKGNAME_QUOTED" ] && return 0
-	scan_gnu '^pkgname="[^$]+"' "pkgname must not be quoted"
+	scan '^pkgname="[^$]+"' "pkgname must not be quoted"
 }
 
 pkgver_quoted() {
 	[ "$SKIP_PKGVER_QUOTED" ] && return 0
-	scan_gnu '^pkgver="[^$]+"' "pkgver must not be quoted"
+	scan '^pkgver="[^$]+"' "pkgver must not be quoted"
 }
 
 empty_variable() {
 	[ "$SKIP_EMPTY_VARIABLE" ] && return 0
-	scan_gnu '^[A-Za-z0-9_]*=(""|''|)$' "variable set to empty string: \2"
+	scan '^[A-Za-z0-9_]*=(""|''|)$' "variable set to empty string: \2"
 }
 
 custom_variable() {
@@ -120,7 +120,7 @@ function_keyword() {
 
 space_before_function_parenthesis() {
 	[ "$SKIP_SPACE_BEFORE_FUNCTION_PARENTHESIS" ] && return 0
-	scan_gnu '^\t*[^ ]*  *\(\)' 'do not use space before function parenthesis'
+	scan '^\t*[^ ]*  *\(\)' 'do not use space before function parenthesis'
 }
 
 space_after_function_parenthesis() {
@@ -130,7 +130,7 @@ space_after_function_parenthesis() {
 
 newline_opening_brace() {
 	[ "$SKIP_NEWLINE_OPENING_BRACE" ] && return 0
-	scan_gnu '^\t*[^ ]*\(\)$' 'do not use a newline before function opening brace'
+	scan '^\t*[^ ]*\(\)$' 'do not use a newline before function opening brace'
 }
 
 superfluous_cd_builddir() {
