@@ -82,6 +82,12 @@ Declaring duplicate dependencies is superfluous.
 The pkgname variable of the APKBUILD has value *foo* but the directory in which the
 APKBUILD is found is not named *foo*
 
+## makedepend-in-depends
+
+A package is present in both makedepends and depends which is superfluous since all
+depends are installed alongside the makedepends, the package can be removed from
+makedepends
+
 # TAGS (apkbuild-lint)
 
 The following tags are used by the *apkbuild-lint* program

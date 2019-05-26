@@ -136,6 +136,17 @@ pkgname_dirname_mismatch() {
 	fi
 }
 
+makedepend_in_depends() {
+	[ "$SKIP_MAKEDEPEND_IN_DEPENDS" ] && return 0
+	local _mkdeps
+	_mkdeps="$(echo $makedepends | tr " " "\\n" | sort -u)"
+	for d in $depends; do
+		if printf "%s\\n" "$_mkdeps" | grep -q "^$d$"; then
+			printf "%s:: dependency '%s' is in depends and makedepends\n" "$apkbuild" "$d"
+		fi
+	done
+}
+
 for apkbuild; do
 	if [ -f "$apkbuild" ]; then
 
@@ -165,6 +176,10 @@ for apkbuild; do
 	if [ ! -z "$makedepends" ]; then
 		upper_repo_makedepends &
 		duplicate_makedepends &
+	fi
+
+	if [ "$makedepends" ] && [ "$depends" ]; then
+		makedepend_in_depends &
 	fi
 
 	if [ ! -z "$checkdepends" ]; then
