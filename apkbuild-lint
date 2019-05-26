@@ -94,7 +94,7 @@ empty_variable() {
 
 custom_variable() {
 	[ "$SKIP_CUSTOM_VARIABLE" ] && return 0
-	scan_gnu '^(?!\s*^('"$variables"'))[^\s=-]+=' \
+	scan_gnu '^(?![ \t]*^('"$variables"'))[^ \t=-]+=' \
 		"prefix custom variable with _: \2"
 }
 
