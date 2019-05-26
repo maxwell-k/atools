@@ -154,7 +154,8 @@ depends_makedepends_checkdepends_overlap() {
 		fi
 	done
 
-	# Don't check against checkdepends if it is empty
+	# Don't check against checkdepends if it is empty, no need to check for
+	# makedepends because the loop just won't run if it is empty.
 	[ -z "$checkdepends" ] && return 0
 	for d in $makedepends; do
 		if printf "%s\\n" "$_ckdeps" | grep -q "^$d$"; then
@@ -188,11 +189,14 @@ for apkbuild; do
 		upper_repo_depends &
 		duplicate_depends &
 	fi
+	
+	# This can be run if either 2 of the 3 are not empty
+	# depends makedepends checkdepends
+	depends_makedepends_checkdepends_overlap &
 
 	if [ ! -z "$makedepends" ]; then
 		upper_repo_makedepends &
 		duplicate_makedepends &
-		depends_makedepends_checkdepends_overlap &
 	fi
 
 	if [ ! -z "$checkdepends" ]; then
