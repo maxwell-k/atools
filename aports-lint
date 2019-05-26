@@ -136,13 +136,29 @@ pkgname_dirname_mismatch() {
 	fi
 }
 
-makedepend_in_depends() {
-	[ "$SKIP_MAKEDEPEND_IN_DEPENDS" ] && return 0
-	local _mkdeps
+depends_makedepends_checkdepends_overlap() {
+	[ "$SKIP_DEPENDS_MAKEDEPENDS_CHECKDEPENDS_OVERLAP" ] && return 0
+	local _mkdeps _ckdeps d
 	_mkdeps="$(echo $makedepends | tr " " "\\n" | sort -u)"
+	_ckdeps="$(echo $checkdepends | tr " " "\\n" | sort -u)"
+	[ -z "$_mkdeps" ] && [ -z "$_ckdeps" ] && return 0
 	for d in $depends; do
 		if printf "%s\\n" "$_mkdeps" | grep -q "^$d$"; then
 			printf "%s:: dependency '%s' is in depends and makedepends\n" "$apkbuild" "$d"
+		fi
+
+		# Don't check against checkdepends if it is empty
+		[ -z "$checkdepends" ] && continue
+		if printf "%s\\n" "$_ckdeps" | grep -q "^$d$"; then
+			printf "%s:: dependency '%s' is in depends and checkdepends\n" "$apkbuild" "$d"
+		fi
+	done
+
+	# Don't check against checkdepends if it is empty
+	[ -z "$checkdepends" ] && return 0
+	for d in $makedepends; do
+		if printf "%s\\n" "$_ckdeps" | grep -q "^$d$"; then
+			printf "%s:: dependency '%s' is in makedepends and checkdepends\n" "$apkbuild" "$d"
 		fi
 	done
 }
@@ -176,10 +192,7 @@ for apkbuild; do
 	if [ ! -z "$makedepends" ]; then
 		upper_repo_makedepends &
 		duplicate_makedepends &
-	fi
-
-	if [ "$makedepends" ] && [ "$depends" ]; then
-		makedepend_in_depends &
+		depends_makedepends_checkdepends_overlap &
 	fi
 
 	if [ ! -z "$checkdepends" ]; then

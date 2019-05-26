@@ -82,11 +82,13 @@ Declaring duplicate dependencies is superfluous.
 The pkgname variable of the APKBUILD has value *foo* but the directory in which the
 APKBUILD is found is not named *foo*
 
-## makedepend-in-depends
+## depends-makedepends-checkdepends-overlap
 
-A package is present in both makedepends and depends which is superfluous since all
-depends are installed alongside the makedepends, the package can be removed from
-makedepends
+A package is present in 2 to 3 of the 3 types of following dependencies: depends,
+makedepends and checkdepends. All of them are installed during creation of the package,
+please specify only once in the lowest common denominator location.
+
+## checkdepend-in-depends
 
 # TAGS (apkbuild-lint)
 
